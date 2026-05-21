@@ -1,0 +1,15 @@
+{
+  "ckpt": "/home/a/aryanj/projects/ijepa/checkpoints/IN1K-vit.h.14-300e.pth.tar",
+  "arch": "vit_huge",
+  "patch_size": 14,
+  "img_size": 224,
+  "depth": 32,
+  "n_layers_saved": 33,
+  "embed_dim": 1280,
+  "tokens_per_image": 256,
+  "n_images": 10000,
+  "svd_subset": 512,
+  "data_root": "/home/h/haoyu/ImageNetV2-matched-frequency",
+  "dtype": "bf16",
+  "note": "layer indices 1..depth correspond to outputs of block_i; layer index depth+1 corresponds to features after final LayerNorm."
+}

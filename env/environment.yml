@@ -1,0 +1,21 @@
+name: ijepa
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - pytorch=2.4.*
+  - torchvision=0.19.*
+  - pytorch-cuda=12.1
+  - numpy
+  - scipy
+  - scikit-learn
+  - pyyaml
+  - matplotlib
+  - pillow
+  - tqdm
+  - pip:
+      - timm==1.0.11
+      - einops

@@ -1,0 +1,35 @@
+# venvs
+ijepaenv/
+.venv/
+venv/
+
+# upstream code (cloned separately, not vendored)
+upstream/
+
+# checkpoints (multi-GB)
+checkpoints/
+*.pth
+*.pth.tar
+*.pt
+
+# intermediate feature dumps (large; only metrics + plots are committed)
+features_cache/
+**/features/pooled_feats.pt
+**/features/token_feats.pt
+**/features/svd_accum.pt
+
+# temp / build
+.tmp/
+.cache/
+__pycache__/
+*.pyc
+*.pyo
+
+# editor / agent
+.claude/
+.idea/
+.vscode/
+.DS_Store
+
+# misc
+*.log

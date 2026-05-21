@@ -1,0 +1,16 @@
+{
+  "model": "timm/vit_base_patch16_224 (MAE pretrain)",
+  "ckpt": "/home/a/aryanj/projects/ijepa/checkpoints/mae_pretrain_vit_base.pth",
+  "ckpt_size_bytes": 343249461,
+  "depth": 12,
+  "n_layers_saved": 13,
+  "embed_dim": 768,
+  "patch_size": 16,
+  "img_size": 224,
+  "tokens_per_image": 196,
+  "cls_excluded": true,
+  "n_images": 10000,
+  "data_root": "/home/h/haoyu/ImageNetV2-matched-frequency",
+  "dtype": "bf16",
+  "note": "SVD via streaming covariance: XtX, sum, n accumulators saved per layer. Centered Gram = XtX - n * mu mu^T; sigma_i^2 = eigvals(centered Gram)."
+}
