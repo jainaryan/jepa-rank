@@ -1,0 +1,15 @@
+{
+  "model": "timm/vit_base_patch14_dinov2.lvd142m (DINOv2)",
+  "depth": 12,
+  "n_layers_saved": 13,
+  "embed_dim": 768,
+  "patch_size": 14,
+  "img_size": 224,
+  "tokens_per_image": 256,
+  "cls_excluded": true,
+  "n_images": 10000,
+  "data_root": "/home/h/haoyu/ImageNetV2-matched-frequency",
+  "dtype": "bf16",
+  "register_tokens": 0,
+  "note": "SVD via streaming covariance: XtX, sum, n accumulators saved per layer. Centered Gram = XtX - n*mu*mu^T; sigma_i^2 = eigvals(centered Gram). Note pos-embed interpolated from native 518 to img_size."
+}

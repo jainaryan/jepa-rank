@@ -42,7 +42,13 @@ Meta did not release an I-JEPA-B/16 checkpoint. To still get a ViT-B-scale datap
 - Code: [`experiments/exp1_svd_vitb/`](experiments/exp1_svd_vitb/)
 - Artifacts: [`outputs/vit_b16_mae/`](outputs/vit_b16_mae/)
 
-This means the H ↔ B comparison is confounded by **method (I-JEPA latent target vs MAE pixel target)**, not just scale. The pixel target forces MAE early layers to retain low-level signal (edges, textures) → expected to keep effective rank higher than a latent-target method. We surface this in the findings.
+### Exp 1c — DINOv2 ViT-B/14, LVD-142M *(second ViT-B SSL method, to partly disentangle scale vs method)*
+- Checkpoint: timm `vit_base_patch14_dinov2.lvd142m` (no register tokens).
+- 12 blocks, d=768, patch_size=14, 256 patch tokens at 224.
+- Code: [`experiments/exp1_svd_vitb_dinov2/`](experiments/exp1_svd_vitb_dinov2/)
+- Artifacts: [`outputs/vit_b14_dinov2/`](outputs/vit_b14_dinov2/)
+
+Comparing H/14 (I-JEPA) ↔ B/16 (MAE) confounds **scale** with **method (latent target vs pixel target)**. Adding DINOv2-B/14 — same scale as MAE, different SSL objective (self-distillation, no pixel reconstruction) — partly separates the two. The remaining clean experiment is pretraining I-JEPA-B/16 ourselves.
 
 ## Headline results
 
@@ -90,30 +96,57 @@ Plots:
 - [Effective rank by layer](outputs/vit_b16_mae/svd/effective_rank_by_layer.png)
 - [Probe by layer](outputs/vit_b16_mae/probe/linear_probe_by_layer.png)
 
+### DINOv2 ViT-B/14 (d=768, 12 blocks)
+| layer | stable | rank@95 | rank@99 | shannon | probe top-1 | best_C |
+|---:|---:|---:|---:|---:|---:|---:|
+|  1 | 24.5 |  271 |  414 | 192.4 |  3.55 % | 10    |
+|  2 | 19.4 |  **461** |  638 | 262.7 |  5.35 % | 0.001 |
+|  4 | 21.2 |  483 |  671 | 228.8 |  9.45 % | 0.001 |
+|  6 | 24.6 |  556 |  702 | 314.2 | 17.15 % | 10    |
+|  8 | 15.3 |  580 |  713 | 314.4 | 24.90 % | 0.1   |
+|  9 | **1.0** | **1**   |  268 |   1.5 | 31.20 % | 1     |
+| 10 | **1.1** | **71**  |  484 |   2.2 | 37.55 % | 0.001 |
+| 11 | **1.2** | **317** |  610 |   5.4 | 45.45 % | 0.001 |
+| 12 | 11.3 |  600 |  702 | 408.8 | **55.95 %** | 0.001 |
+| 13 (norm) | 38.6 | 630 | 732 | 470.8 | 55.00 % | 0.1   |
+
+- **rank@95 crosses d/2 at layer 2** — earliest of the three models.
+- **Layers 9–11 show a stable_rank ≈ 1 anomaly** — see "DINOv2 artifact tokens" caveat below.
+- Probe ceiling = 56 % at L12 — best of any model tested (DINOv2 features just are stronger).
+
+Full table: [`outputs/vit_b14_dinov2/comparison_table.md`](outputs/vit_b14_dinov2/comparison_table.md).
+Plots: [spectrum](outputs/vit_b14_dinov2/svd/svd_spectrum.png), [effective rank](outputs/vit_b14_dinov2/svd/effective_rank_by_layer.png), [probe](outputs/vit_b14_dinov2/probe/linear_probe_by_layer.png).
+
 ### Side-by-side
 
-| metric | I-JEPA-H/14 | MAE-B/16 |
-|---|---|---|
-| L1 rank@95 / d | **6 %** (76/1280) | **30 %** (233/768) |
-| L1 stable rank | 9.7 | 11.7 |
-| Layer where rank@95 ≥ d/2 | between L11–L12 | layer 7 |
-| Peak rank@95 / d | 67 % (L24) | 77 % (L12) |
-| Probe top-1 ceiling | 53 % (L32) | 27 % (L11) |
+| metric | I-JEPA-H/14 | MAE-B/16 | DINOv2-B/14 |
+|---|---|---|---|
+| L1 rank@95 / d | **6 %** (76/1280) | 30 % (233/768) | 35 % (271/768) |
+| L1 stable rank | 9.7 | 11.7 | 24.5 |
+| Layer where rank@95 ≥ d/2 | between L11–L12 | L7 | **L2** |
+| Peak rank@95 / d | 67 % (L24) | 77 % (L12) | 82 % (L13 norm) |
+| Probe top-1 ceiling | 53 % (L32) | 27 % (L11) | **56 % (L12)** |
+| Anomalous layers | — | — | L9–11 (artifact tokens) |
 
 ## Findings
 
-1. **Strong early-layer overprovisioning is real at the H scale.** I-JEPA-H/14 layer 1 carries 95 % of its variance in just 76 of 1280 dims. The first ~8 blocks all live in subspaces well under d/2. A 200-d early block would lose negligible information.
+1. **Strong early-layer overprovisioning is robust at the H scale.** I-JEPA-H/14 layer 1 carries 95 % of its variance in just 76 of 1280 dims. The first ~8 blocks all live in subspaces well under d/2. A 200-d early block would lose negligible information.
 
-2. **At the B scale the gap shrinks substantially.** MAE-B/16 L1 already uses 30 % of d. The rank@95 curve crosses d/2 at L7 — roughly the middle of the network — vs near-final in ViT-H/14.
+2. **At the B scale the overprovisioning gap shrinks substantially, across two different SSL methods.** Both MAE-B/16 (30 %) and DINOv2-B/14 (35 %) use ~⅓ of d in layer 1, and rank@95 crosses d/2 much earlier (L7 and L2 respectively). The ViT-H result does **not** transfer cleanly to ViT-B.
 
-3. **Confound.** We cannot fully separate **scale (B vs H)** from **method (MAE pixel reconstruction vs I-JEPA latent prediction)**. MAE's pixel target naturally forces early layers to retain low-level structure → higher rank. The clean experiment requires pretraining I-JEPA-B/16.
+3. **DINOv2-B/14 is the most "rank-saturated" of the three.** rank@95 crosses d/2 already at layer 2, vs L7 for MAE-B/16. Self-distillation (no reconstruction target) gives the *highest* early-layer rank we measured. The progressive-dim story is weakest for DINOv2-style training.
 
-4. **Linear probe accuracy rises monotonically with depth** in both models. There is no "plateau in layers 1–N" — the original hypothesis framing needs sharpening from "functionally equivalent early layers" to "low-rank early layers, even when carrying limited task-relevant signal."
+4. **DINOv2 artifact tokens.** Layers 9, 10, 11 show stable_rank ≈ 1.0 — a single direction dominates 99 %+ of the total energy. This is the well-known [register-token artifact](https://arxiv.org/abs/2309.16588): the no-register DINOv2 variant produces a small number of extremely high-norm "artifact" tokens that hijack the singular spectrum. Our SVD metrics for L9–L11 are dominated by ~tens of outlier tokens, not by genuine low-rank structure across the population. *The `reg4` DINOv2 variant or filtering high-norm tokens before SVD would clean this up.*
 
-### Next experiments to disentangle
+5. **Linear probe accuracy rises monotonically with depth** in all three models. There is no "plateau in layers 1–N" — the original hypothesis "early layers are functionally equivalent" needs sharpening to "early layers carry less task-relevant information but pack what they have into very few dimensions."
 
-- **Pretrain I-JEPA-B/16 ourselves** (50–100 epochs may suffice for rank analysis) — isolates the scale axis.
-- **Run the same analysis on DINOv2-B/14** — different SSL method (self-distillation, no raw-pixel target). If DINOv2-B matches I-JEPA-H's pattern, the I-JEPA ↔ MAE gap is real; if it matches MAE-B, the difference is mostly scale.
+6. **Scale vs method is now partly disentangled.** With MAE-B/16 ≈ DINOv2-B/14 ≈ 30–35 % L1 rank/d, and I-JEPA-H/14 at 6 %, the leading-order effect is likely **scale**: bigger d gives more room to leave unused in early layers. We can't rule out a residual method effect without an I-JEPA-B/16 datapoint, but the I-JEPA ↔ MAE B-scale gap predicted by "method matters" is probably small.
+
+### Next experiments
+
+- **Pretrain I-JEPA-B/16 ourselves** (50–100 epochs is plausibly enough for rank analysis). Closes the scale-vs-method gap.
+- **DINOv2-B/14 with register tokens** (timm: `vit_base_patch14_reg4_dinov2.lvd142m`) — should remove the L9–11 anomaly and give a clean comparison.
+- **Token-norm filtering on the DINOv2 SVD** — drop top-1 % of tokens by ℓ₂ norm and recompute spectrum; expected to reveal the underlying low-rank structure currently masked by artifacts.
 
 ## Reproduce
 
@@ -129,6 +162,7 @@ pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cu124 \
 pip install --no-cache-dir numpy scipy scikit-learn pyyaml matplotlib pillow tqdm timm einops
 bash scripts/download_checkpoint.sh        # I-JEPA ViT-H/14 (9.7 GB)
 bash scripts/download_mae_b16.sh           # MAE ViT-B/16  (328 MB)
+bash scripts/prefetch_dinov2_b14.sh        # DINOv2-B/14   (optional; ~340 MB)
 ```
 
 ### Run experiments
@@ -138,6 +172,9 @@ sbatch experiments/exp1_svd/run.slurm
 
 # Exp 1b — MAE ViT-B/16 (extract + SVD + probe + table in one job)
 sbatch experiments/exp1_svd_vitb/run.slurm
+
+# Exp 1c — DINOv2-B/14 (same pipeline; reuses MAE's svd/probe/table scripts)
+sbatch experiments/exp1_svd_vitb_dinov2/run.slurm
 ```
 
 Each job takes ~5 min on an A100-80 (gpu-long / gpu partition).
@@ -157,6 +194,7 @@ bash scripts/sync_to_cluster.sh
 ├── scripts/
 │   ├── download_checkpoint.sh         I-JEPA ViT-H/14
 │   ├── download_mae_b16.sh            MAE ViT-B/16
+│   ├── prefetch_dinov2_b14.sh         DINOv2-B/14 (via timm + HF)
 │   └── sync_to_cluster.sh             rsync project to cluster
 ├── experiments/
 │   ├── exp1_svd/                      ViT-H/14 pipeline
@@ -164,28 +202,30 @@ bash scripts/sync_to_cluster.sh
 │   │   ├── svd_analysis.py            spectra + effective rank + plots
 │   │   ├── linear_probe.py            in-GPU 1000-way LR
 │   │   └── run.slurm
-│   └── exp1_svd_vitb/                 MAE-B/16 pipeline (streaming covariance)
-│       ├── extract_features.py        forward + pooled + accumulators
-│       ├── svd_analysis.py
-│       ├── linear_probe.py            GPU LR with C-sweep
-│       ├── make_table.py              compare_table.{md,csv}
-│       ├── run.slurm                  full pipeline
-│       └── run_probe_only.slurm       probe-only against an existing extract+SVD run
+│   ├── exp1_svd_vitb/                 MAE-B/16 pipeline (streaming covariance)
+│   │   ├── extract_features.py        forward + pooled + accumulators
+│   │   ├── svd_analysis.py            (also reused by DINOv2)
+│   │   ├── linear_probe.py            GPU LR with C-sweep (also reused)
+│   │   ├── make_table.py              compare_table.{md,csv} (also reused)
+│   │   ├── run.slurm                  full pipeline
+│   │   └── run_probe_only.slurm       probe-only against an existing extract+SVD run
+│   └── exp1_svd_vitb_dinov2/          DINOv2-B/14 pipeline (reuses svd/probe/table)
+│       ├── extract_features.py        timm load + pos-embed interp to 224
+│       └── run.slurm
 └── outputs/
     ├── vit_h14_ijepa/                 I-JEPA-H/14 results
-    │   ├── meta.json
-    │   ├── svd/{spectrum,effective_rank}.png + svd_metrics.json
-    │   └── probe/linear_probe_by_layer.png + linear_probe.json
-    └── vit_b16_mae/                   MAE-B/16 results
+    ├── vit_b16_mae/                   MAE-B/16 results
+    └── vit_b14_dinov2/                DINOv2-B/14 results
         ├── comparison_table.{md,csv}
         ├── features/meta.json
-        ├── svd/...
-        └── probe/...
+        ├── svd/{spectrum,effective_rank}.png + svd_metrics.json
+        └── probe/linear_probe_by_layer.png + linear_probe.json
 ```
 
 ## Credits
 
 - **I-JEPA** — [Assran et al., CVPR 2023](https://arxiv.org/abs/2301.08243), [code](https://github.com/facebookresearch/ijepa).
 - **MAE** — [He et al., CVPR 2022](https://arxiv.org/abs/2111.06377), [code](https://github.com/facebookresearch/mae).
+- **DINOv2** — [Oquab et al., 2023](https://arxiv.org/abs/2304.07193), [code](https://github.com/facebookresearch/dinov2). The artifact-token observation in §Findings is from [Darcet et al., ICLR 2024](https://arxiv.org/abs/2309.16588).
 - **ImageNetV2** — [Recht et al., ICML 2019](https://arxiv.org/abs/1902.10811), matched-frequency split.
 - Compute: NUS SoC student cluster (A100-80 partitions).

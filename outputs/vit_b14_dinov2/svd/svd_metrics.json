@@ -1,0 +1,111 @@
+{
+  "layers": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13
+  ],
+  "embed_dim": 768,
+  "metrics": {
+    "1": {
+      "stable_rank": 24.52602239727682,
+      "rank_at_95": 271,
+      "rank_at_99": 414,
+      "shannon_rank": 192.37467938038515,
+      "participation": 323.95047471046104
+    },
+    "2": {
+      "stable_rank": 19.43817819716735,
+      "rank_at_95": 461,
+      "rank_at_99": 638,
+      "shannon_rank": 262.7186280999599,
+      "participation": 457.8197884181508
+    },
+    "3": {
+      "stable_rank": 16.42204741741972,
+      "rank_at_95": 426,
+      "rank_at_99": 631,
+      "shannon_rank": 218.9723467283326,
+      "participation": 415.4885003526171
+    },
+    "4": {
+      "stable_rank": 21.219104184979606,
+      "rank_at_95": 483,
+      "rank_at_99": 671,
+      "shannon_rank": 228.78108419409548,
+      "participation": 437.61241255232164
+    },
+    "5": {
+      "stable_rank": 22.69827651465109,
+      "rank_at_95": 526,
+      "rank_at_99": 692,
+      "shannon_rank": 273.45902400494293,
+      "participation": 480.4088424084972
+    },
+    "6": {
+      "stable_rank": 24.621240763123417,
+      "rank_at_95": 556,
+      "rank_at_99": 702,
+      "shannon_rank": 314.17486854160836,
+      "participation": 514.5078969276899
+    },
+    "7": {
+      "stable_rank": 20.697616426240327,
+      "rank_at_95": 567,
+      "rank_at_99": 706,
+      "shannon_rank": 313.64708365314334,
+      "participation": 520.7545780050181
+    },
+    "8": {
+      "stable_rank": 15.271832832073256,
+      "rank_at_95": 580,
+      "rank_at_99": 713,
+      "shannon_rank": 314.42958869245456,
+      "participation": 527.988687033881
+    },
+    "9": {
+      "stable_rank": 1.043095933453113,
+      "rank_at_95": 1,
+      "rank_at_99": 268,
+      "shannon_rank": 1.4938917707745691,
+      "participation": 31.546052529283873
+    },
+    "10": {
+      "stable_rank": 1.092440357360846,
+      "rank_at_95": 71,
+      "rank_at_99": 484,
+      "shannon_rank": 2.2227744345855456,
+      "participation": 64.60272430845257
+    },
+    "11": {
+      "stable_rank": 1.2398297170662358,
+      "rank_at_95": 317,
+      "rank_at_99": 610,
+      "shannon_rank": 5.392833764606115,
+      "participation": 140.35896525131994
+    },
+    "12": {
+      "stable_rank": 11.271577929230395,
+      "rank_at_95": 600,
+      "rank_at_99": 702,
+      "shannon_rank": 408.8376363863997,
+      "participation": 596.2777343139284
+    },
+    "13": {
+      "stable_rank": 38.57075475571017,
+      "rank_at_95": 630,
+      "rank_at_99": 732,
+      "shannon_rank": 470.79949931419776,
+      "participation": 620.3672244832023
+    }
+  }
+}
