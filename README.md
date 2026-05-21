@@ -148,6 +148,27 @@ Plots: [spectrum](outputs/vit_b14_dinov2/svd/svd_spectrum.png), [effective rank]
 - **DINOv2-B/14 with register tokens** (timm: `vit_base_patch14_reg4_dinov2.lvd142m`) — should remove the L9–11 anomaly and give a clean comparison.
 - **Token-norm filtering on the DINOv2 SVD** — drop top-1 % of tokens by ℓ₂ norm and recompute spectrum; expected to reveal the underlying low-rank structure currently masked by artifacts.
 
+---
+
+## Exp 2 — Low-rank probe *(in flight)*
+
+The Exp 1 finding "early I-JEPA-H/14 layers live in a 76-dim subspace within 1280" is *suggestive* of compressibility but not a direct test. Exp 2 closes that gap.
+
+**Method.** For each layer L of I-JEPA-H/14:
+1. Re-extract features with the streaming-covariance pipeline (we need the actual eigenvectors of the token Gram, not just the eigenvalues we kept from Exp 1).
+2. For each `k` in `{4, 8, 16, 32, 64, 128, 256, 384, 512, 768, 1024, 1280}` plus the layer's own `rank@95(L)` and `rank@99(L)`:
+   - Project the mean-pooled feature `x` onto the top-k eigenvectors: `z = V_L[:, :k]ᵀ x`.
+   - Train the 1000-way linear probe on `z` (8/2 split, standardize on train, C-sweep, report best val top-1).
+3. Headline metric per layer: **`top-1@rank95 / top-1@full_d`**. If early layers retain ~100 % of full-d accuracy at `k = rank@95(L)`, the low-rank structure is *real* (compressible without task-loss). If they lose substantial accuracy, the rank metric is misleading.
+
+Note that mean-pool commutes with the linear projection, so this is exactly equivalent to mean-pooling token features that were first projected onto the top-k subspace.
+
+**Status.** Code lives at [`experiments/exp2_lowrank_probe/`](experiments/exp2_lowrank_probe/). Job submission is currently blocked by an `AssocMaxSubmitJobLimit` (the other project on the same account has ~30 jobs queued). The job will go in as soon as one of those clears (~10 min eta at submit time). Results will land in `outputs/exp2_lowrank_probe/` and this section will be updated with the table and plots.
+
+```bash
+sbatch experiments/exp2_lowrank_probe/run.slurm    # extract + probe sweep, ~30 min on A100-80
+```
+
 ## Reproduce
 
 ### Cluster setup (NUS SoC)
@@ -209,8 +230,12 @@ bash scripts/sync_to_cluster.sh
 │   │   ├── make_table.py              compare_table.{md,csv} (also reused)
 │   │   ├── run.slurm                  full pipeline
 │   │   └── run_probe_only.slurm       probe-only against an existing extract+SVD run
-│   └── exp1_svd_vitb_dinov2/          DINOv2-B/14 pipeline (reuses svd/probe/table)
-│       ├── extract_features.py        timm load + pos-embed interp to 224
+│   ├── exp1_svd_vitb_dinov2/          DINOv2-B/14 pipeline (reuses svd/probe/table)
+│   │   ├── extract_features.py        timm load + pos-embed interp to 224
+│   │   └── run.slurm
+│   └── exp2_lowrank_probe/            Exp 2 — low-rank probe sweep on I-JEPA-H/14
+│       ├── extract_with_accum.py      re-extract with streaming covariance
+│       ├── lowrank_probe.py           project onto top-k eigvecs + C-sweep probe
 │       └── run.slurm
 └── outputs/
     ├── vit_h14_ijepa/                 I-JEPA-H/14 results
