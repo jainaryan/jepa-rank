@@ -5,6 +5,8 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=48G
 #SBATCH --time=01:30:00
+# xgpj0/xgpk0 are ARM64 (GH200) nodes; our x86_64 pip venv can't execute there.
+#SBATCH --exclude=xgpj0,xgpk0
 #SBATCH --output=/home/a/aryanj/logs/jepa-rank-exp2-%j.out
 #SBATCH --error=/home/a/aryanj/logs/jepa-rank-exp2-%j.err
 
